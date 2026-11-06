@@ -1,1 +1,1 @@
-"""IT-Sentinel Streamlit dashboard package."""
+"""IT-Sentinel Streamlit frontend package."""

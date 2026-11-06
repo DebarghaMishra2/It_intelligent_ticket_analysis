@@ -17,7 +17,19 @@ from frontend.api_client import APIError, ITSentinelClient
 from frontend.workbench import render_incident_workbench
 
 
-DEFAULT_API_URL = os.getenv("IT_SENTINEL_API_URL", "http://127.0.0.1:8001")
+def _streamlit_setting(name: str, default: str) -> str:
+    """Read a setting from Streamlit secrets first, then environment variables."""
+    try:
+        value = st.secrets.get(name)
+    except Exception:
+        value = None
+    if value is None:
+        value = os.getenv(name, default)
+    return str(value)
+
+
+DEPLOYMENT_MODE = _streamlit_setting("IT_SENTINEL_MODE", "api").strip().lower()
+DEFAULT_API_URL = _streamlit_setting("IT_SENTINEL_API_URL", "http://127.0.0.1:8001")
 NAV_ITEMS = [
     "Overview",
     "Incident Workbench",
@@ -193,7 +205,7 @@ def _render_search(client: ITSentinelClient) -> None:
 
 def _render_compare(client: ITSentinelClient) -> None:
     st.subheader("Compare retrieval methods")
-    st.write("Run the same query through BM25, semantic search and hybrid Reciprocal Rank Fusion (RRF). Compare rank positions and reviewed relevance—not raw scores across different scales.")
+    st.write("Run the same query through BM25, TF-IDF similarity and hybrid RRF. The free-hosted profile uses lightweight TF-IDF rather than neural semantic embeddings." if getattr(client, "local_mode", False) else "Run the same query through BM25, semantic search and hybrid Reciprocal Rank Fusion (RRF). Compare rank positions and reviewed relevance—not raw scores across different scales.")
     with st.form("compare_retrieval_form"):
         ticket_id = st.text_input("Comparison ticket ID", value="COMPARE-002")
         query = st.text_area("Issue description", placeholder="Describe the IT issue to compare across retrieval methods...", height=120)
@@ -220,7 +232,8 @@ def _render_compare(client: ITSentinelClient) -> None:
         st.divider()
         st.caption(f"Request ID: {result.get('request_id', '—')}")
         methods = result.get("methods", {})
-        method_tabs = st.tabs(["BM25", "Semantic", "Hybrid RRF"])
+        method_labels = ["BM25", "TF-IDF (lightweight)", "Hybrid RRF"] if getattr(client, "local_mode", False) else ["BM25", "Semantic", "Hybrid RRF"]
+        method_tabs = st.tabs(method_labels)
         for tab, method_key in zip(method_tabs, ["bm25", "semantic", "hybrid"]):
             with tab:
                 block = methods.get(method_key, {})
@@ -352,19 +365,30 @@ def _render_feedback_audit(client: ITSentinelClient) -> None:
 def main() -> None:
     st.sidebar.markdown('<p class="its-brand">🛡️ IT-Sentinel</p><p class="its-sub">Intelligent IT ticket analysis</p>', unsafe_allow_html=True)
     st.sidebar.divider()
-    api_url = st.sidebar.text_input("FastAPI base URL", value=st.session_state.get("its_api_url", DEFAULT_API_URL), help="Local default is port 8001. In Docker Compose the dashboard uses http://api:8000.")
-    st.session_state["its_api_url"] = api_url.strip().rstrip("/")
-    client = ITSentinelClient(st.session_state["its_api_url"] or DEFAULT_API_URL)
+    if DEPLOYMENT_MODE in {"local", "embedded", "streamlit"}:
+        client = ITSentinelClient("local")
+        st.sidebar.success("Embedded runtime · Models ready")
+        st.sidebar.caption("Free-hosted profile uses BM25 + TF-IDF + RRF. It does not load PyTorch or the Sentence Transformer model.")
+        st.sidebar.caption("Feedback and audit use temporary local storage on Streamlit Community Cloud.")
+    else:
+        api_url = st.sidebar.text_input(
+            "FastAPI base URL",
+            value=st.session_state.get("its_api_url", DEFAULT_API_URL),
+            help="Local default is port 8001. In Docker Compose the dashboard uses http://api:8000.",
+        )
+        st.session_state["its_api_url"] = api_url.strip().rstrip("/")
+        client = ITSentinelClient(st.session_state["its_api_url"] or DEFAULT_API_URL)
 
-    try:
-        health = client.health()
-        if health.get("models_loaded"):
-            st.sidebar.success("API online · Models ready")
-        else:
-            st.sidebar.warning("API reachable · Models starting")
-    except APIError as error:
-        st.sidebar.error("API offline")
-        st.sidebar.caption(str(error))
+    if DEPLOYMENT_MODE not in {"local", "embedded", "streamlit"}:
+        try:
+            health = client.health()
+            if health.get("models_loaded"):
+                st.sidebar.success("API online · Models ready")
+            else:
+                st.sidebar.warning("API reachable · Models starting")
+        except APIError as error:
+            st.sidebar.error("API offline")
+            st.sidebar.caption(str(error))
 
     if "its_page" not in st.session_state:
         st.session_state["its_page"] = "Overview"
