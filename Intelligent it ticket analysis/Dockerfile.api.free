@@ -1,0 +1,40 @@
+# Lightweight Render Free API image.
+# This profile intentionally does not install or import PyTorch/Sentence Transformers.
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    IT_SENTINEL_RETRIEVAL_MODE=bm25_tfidf \
+    IT_SENTINEL_DATABASE_PATH=/tmp/it_sentinel.db \
+    IT_SENTINEL_CLASSIFICATION_REVIEW_THRESHOLD=0.60 \
+    TOKENIZERS_PARALLELISM=false \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-api-free.txt ./requirements-api-free.txt
+RUN python -m pip install --upgrade pip \
+    && python -m pip install --no-cache-dir -r requirements-api-free.txt
+
+# Include only runtime code and the files required to classify/search tickets.
+COPY src/ ./src/
+COPY models/ ./models/
+COPY data/processed/classification_train.csv ./data/processed/classification_train.csv
+COPY data/knowledge_base/approved_articles.json ./data/knowledge_base/approved_articles.json
+
+# Fail the image build early if the classifier cannot be deserialized by the
+# pinned scikit-learn/joblib versions. Heavy transformer imports are not used.
+RUN python -c "from src.classification.predict import load_model; load_model(); from src.api.free_retrieval import build_tfidf_index; print('Lightweight API dependencies and classifier import successfully.')"
+
+EXPOSE 10000
+
+# One process only: avoids multiplying the model/index memory footprint.
+CMD ["sh", "-c", "exec python -m uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-10000} --workers 1"]
