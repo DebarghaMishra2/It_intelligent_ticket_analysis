@@ -1,0 +1,452 @@
+"""IT-Sentinel analyst dashboard.
+
+This is a thin Streamlit client: all classification, retrieval, recommendation,
+feedback and audit operations are performed by the FastAPI service.
+"""
+
+from __future__ import annotations
+
+import os
+from datetime import datetime
+from typing import Any, Dict, List
+
+import pandas as pd
+import streamlit as st
+
+from frontend.api_client import APIError, ITSentinelClient
+from frontend.workbench import render_incident_workbench
+
+
+def _streamlit_setting(name: str, default: str) -> str:
+    """Read a setting from Streamlit secrets first, then environment variables."""
+    try:
+        value = st.secrets.get(name)
+    except Exception:
+        value = None
+    if value is None:
+        value = os.getenv(name, default)
+    return str(value)
+
+
+DEPLOYMENT_MODE = _streamlit_setting("IT_SENTINEL_MODE", "api").strip().lower()
+DEFAULT_API_URL = _streamlit_setting("IT_SENTINEL_API_URL", "http://127.0.0.1:8001")
+NAV_ITEMS = [
+    "Overview",
+    "Incident Workbench",
+    "Analyze ticket",
+    "Similar tickets",
+    "Compare retrieval",
+    "Recommendations",
+    "Feedback & audit",
+]
+
+st.set_page_config(
+    page_title="IT-Sentinel | IT Support Intelligence",
+    page_icon="🛡️",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+st.markdown(
+    """
+    <style>
+      .block-container {padding-top: 1.7rem; padding-bottom: 2.5rem; max-width: 1450px;}
+      [data-testid="stSidebar"] {border-right: 1px solid rgba(128,128,128,.18);}
+      .its-brand {font-size: 1.55rem; font-weight: 800; letter-spacing: -.04em; margin: 0;}
+      .its-sub {color: #8993a4; font-size: .83rem; margin-top: .2rem;}
+      .its-eyebrow {color: #7b8798; font-size: .72rem; letter-spacing: .13em; text-transform: uppercase; font-weight: 700;}
+      .its-panel {border: 1px solid rgba(128,128,128,.22); border-radius: 14px; padding: 1rem 1.1rem; background: rgba(128,128,128,.035);}
+      .its-muted {color: #8792a2; font-size: .86rem;}
+      .its-kpi {font-size: 1.65rem; line-height: 1.2; font-weight: 750;}
+      div[data-testid="stMetric"] {background: rgba(128,128,128,.045); border: 1px solid rgba(128,128,128,.18); padding: .85rem 1rem; border-radius: 12px;}
+      div[data-testid="stForm"] {border: 1px solid rgba(128,128,128,.20); border-radius: 14px; padding: 1rem;}
+      .stButton button, .stFormSubmitButton button {border-radius: 9px; font-weight: 650;}
+      hr {margin: 1.1rem 0;}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def _remember_request(kind: str, response: Dict[str, Any], ticket_id: str = "") -> None:
+    request_id = response.get("request_id")
+    if not request_id:
+        return
+    st.session_state.setdefault("its_requests", {})
+    st.session_state["its_requests"][kind] = {
+        "request_id": request_id,
+        "ticket_id": ticket_id or response.get("ticket_id") or "",
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+
+def _show_api_error(error: Exception) -> None:
+    st.error(str(error))
+    if isinstance(error, APIError) and error.status_code:
+        st.caption(f"HTTP status: {error.status_code}")
+
+
+def _render_result_table(results: List[Dict[str, Any]], columns: List[str] | None = None) -> None:
+    if not results:
+        st.info("No results were returned for this query.")
+        return
+    frame = pd.DataFrame(results)
+    if columns:
+        columns = [column for column in columns if column in frame.columns]
+        frame = frame[columns]
+    st.dataframe(frame, use_container_width=True, hide_index=True)
+    for item in results:
+        title = f"#{item.get('rank', '?')} · {item.get('ticket_id', 'Ticket')} · {item.get('category', 'Unclassified')}"
+        with st.expander(title):
+            st.write(item.get("description") or "No description supplied.")
+            details = {
+                key: item.get(key)
+                for key in ["bm25_rank", "bm25_score", "semantic_rank", "semantic_score", "rrf_score", "retrieval_score", "retrieval_score_type", "evidence_type"]
+                if item.get(key) is not None
+            }
+            if details:
+                st.json(details)
+            st.caption("Evidence type: historical ticket description. This is not a verified resolution.")
+
+
+
+def _go_to_page(page: str) -> None:
+    st.session_state["its_page"] = page
+
+
+def _render_analyze(client: ITSentinelClient) -> None:
+    st.subheader("Analyze a new IT ticket")
+    st.write("Classify the ticket, review the model confidence, and calculate a demonstration priority when impact and urgency are supplied.")
+    with st.form("analyze_ticket_form"):
+        col1, col2 = st.columns([1, 2])
+        ticket_id = col1.text_input("Ticket ID", value="DEMO-002", max_chars=100)
+        impact = col2.selectbox("Impact", ["Not provided", "low", "medium", "high"], index=2)
+        urgency = st.selectbox("Urgency", ["Not provided", "low", "medium", "high"], index=3)
+        description = st.text_area(
+            "Ticket description",
+            placeholder="Example: Unable to access Outlook after changing my password. Authentication keeps failing.",
+            height=150,
+        )
+        submitted = st.form_submit_button("Analyze ticket", type="primary", use_container_width=True)
+
+    if submitted:
+        if len(description.strip()) < 5:
+            st.warning("Enter a ticket description containing at least five characters.")
+        else:
+            payload: Dict[str, Any] = {"ticket_id": ticket_id.strip() or None, "description": description.strip()}
+            if impact != "Not provided":
+                payload["impact"] = impact
+            if urgency != "Not provided":
+                payload["urgency"] = urgency
+            try:
+                with st.spinner("Running ticket classification..."):
+                    result = client.analyze_ticket(payload)
+                st.session_state["its_last_analysis"] = result
+                _remember_request("analysis", result, ticket_id)
+            except APIError as error:
+                _show_api_error(error)
+
+    result = st.session_state.get("its_last_analysis")
+    if result:
+        st.divider()
+        classification = result.get("classification", {})
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Predicted category", classification.get("predicted_category", "—"))
+        m2.metric("Model probability", f"{classification.get('model_probability', 0):.1%}")
+        m3.metric("Priority", result.get("priority") or "Not assigned")
+        if result.get("human_review_recommended"):
+            st.warning(f"Human review recommended · Confidence: {result.get('confidence_band', 'unknown')}")
+        else:
+            st.success(f"Confidence band: {result.get('confidence_band', 'unknown')} · Analyst validation is still required before operational action.")
+        top_categories = classification.get("top_categories", [])
+        if top_categories:
+            st.markdown("**Top predicted categories**")
+            st.bar_chart(pd.DataFrame(top_categories).set_index("category"), y="probability")
+        if result.get("priority_note"):
+            st.caption(result["priority_note"])
+        with st.expander("Model limitations and request details"):
+            st.write("Request ID:", result.get("request_id", "—"))
+            for note in result.get("limitations", []):
+                st.write(f"• {note}")
+
+
+def _render_search(client: ITSentinelClient) -> None:
+    st.subheader("Find similar historical tickets")
+    st.write("Search the indexed historical ticket descriptions using the current hybrid ranking.")
+    with st.form("search_tickets_form"):
+        ticket_id = st.text_input("Ticket ID (optional)", value="DEMO-SEARCH-001")
+        query = st.text_area("Search query", placeholder="Describe the issue, error, application and symptoms...", height=120)
+        c1, c2 = st.columns(2)
+        top_k = c1.slider("Number of results", 1, 10, 5)
+        category = c2.selectbox("Category filter", ["All categories", "Active Directory", "Computer-Services", "EOL", "Fileservice", "O365", "Software", "Support general"])
+        submitted = st.form_submit_button("Search historical tickets", type="primary", use_container_width=True)
+    if submitted:
+        if len(query.strip()) < 3:
+            st.warning("Enter at least three characters to search.")
+        else:
+            payload = {"ticket_id": ticket_id.strip() or None, "query": query.strip(), "top_k": top_k}
+            if category != "All categories":
+                payload["category"] = category
+            try:
+                with st.spinner("Searching BM25 and semantic indexes..."):
+                    result = client.search_tickets(payload)
+                st.session_state["its_last_search"] = result
+                _remember_request("search", result, ticket_id)
+            except APIError as error:
+                _show_api_error(error)
+    result = st.session_state.get("its_last_search")
+    if result:
+        st.divider()
+        st.caption(f"{result.get('result_count', 0)} results · Request ID: {result.get('request_id', '—')}")
+        if result.get("filter_note"):
+            st.info(result["filter_note"])
+        _render_result_table(result.get("results", []), ["rank", "ticket_id", "category", "bm25_rank", "semantic_rank", "rrf_score"])
+
+
+def _render_compare(client: ITSentinelClient) -> None:
+    st.subheader("Compare retrieval methods")
+    st.write("Run the same query through BM25, TF-IDF similarity and hybrid RRF. The free-hosted profile uses lightweight TF-IDF rather than neural semantic embeddings." if getattr(client, "local_mode", False) else "Run the same query through BM25, semantic search and hybrid Reciprocal Rank Fusion (RRF). Compare rank positions and reviewed relevance—not raw scores across different scales.")
+    with st.form("compare_retrieval_form"):
+        ticket_id = st.text_input("Comparison ticket ID", value="COMPARE-002")
+        query = st.text_area("Issue description", placeholder="Describe the IT issue to compare across retrieval methods...", height=120)
+        col1, col2 = st.columns(2)
+        top_k = col1.slider("Results per method", 1, 10, 5, key="compare_top_k")
+        category = col2.selectbox("Optional category filter", ["All categories", "Active Directory", "Computer-Services", "EOL", "Fileservice", "O365", "Software", "Support general"], key="compare_category")
+        submitted = st.form_submit_button("Compare methods", type="primary", use_container_width=True)
+    if submitted:
+        if len(query.strip()) < 3:
+            st.warning("Enter at least three characters.")
+        else:
+            payload = {"ticket_id": ticket_id.strip() or None, "query": query.strip(), "top_k": top_k}
+            if category != "All categories":
+                payload["category"] = category
+            try:
+                with st.spinner("Comparing BM25, semantic and hybrid rankings..."):
+                    result = client.compare_retrieval(payload)
+                st.session_state["its_last_compare"] = result
+                _remember_request("compare", result, ticket_id)
+            except APIError as error:
+                _show_api_error(error)
+    result = st.session_state.get("its_last_compare")
+    if result:
+        st.divider()
+        st.caption(f"Request ID: {result.get('request_id', '—')}")
+        methods = result.get("methods", {})
+        method_labels = ["BM25", "TF-IDF (lightweight)", "Hybrid RRF"] if getattr(client, "local_mode", False) else ["BM25", "Semantic", "Hybrid RRF"]
+    method_tabs = st.tabs(method_labels)
+        for tab, method_key in zip(method_tabs, ["bm25", "semantic", "hybrid"]):
+            with tab:
+                block = methods.get(method_key, {})
+                st.metric("Results", block.get("result_count", 0))
+                rows = block.get("results", [])
+                display_columns = ["rank", "ticket_id", "category", "retrieval_score", "retrieval_score_type"]
+                if rows:
+                    st.dataframe(pd.DataFrame(rows)[[c for c in display_columns if c in rows[0]]], use_container_width=True, hide_index=True)
+                    for item in rows:
+                        with st.expander(f"#{item.get('rank')} · {item.get('ticket_id')} · {item.get('category')}"):
+                            st.write(item.get("description", ""))
+                            st.json({k: v for k, v in item.items() if k not in {"description"}})
+                else:
+                    st.info("No results for this method.")
+        st.info(result.get("score_comparison_note", "Compare rank positions, not raw scores."))
+        st.caption(result.get("evidence_note", "Historical ticket descriptions are not verified resolutions."))
+
+
+def _render_recommendations(client: ITSentinelClient) -> None:
+    st.subheader("Evidence-backed recommendations")
+    st.write("Recommendations are drawn only from articles explicitly marked approved in the knowledge base. Historical ticket descriptions are shown as precedents, not as resolution instructions.")
+    with st.form("recommendation_form"):
+        ticket_id = st.text_input("Ticket ID", value="DEMO-003")
+        description = st.text_area("Ticket description", placeholder="Describe the incident and what the user has already tried...", height=135)
+        top_k = st.slider("Similar historical tickets", 1, 10, 5, key="recommend_top_k")
+        submitted = st.form_submit_button("Find recommendations", type="primary", use_container_width=True)
+    if submitted:
+        if len(description.strip()) < 5:
+            st.warning("Enter a ticket description containing at least five characters.")
+        else:
+            payload = {"ticket_id": ticket_id.strip() or None, "description": description.strip(), "top_k": top_k}
+            try:
+                with st.spinner("Checking approved knowledge and historical precedents..."):
+                    result = client.recommend(payload)
+                st.session_state["its_last_recommendation"] = result
+                _remember_request("recommendation", result, ticket_id)
+            except APIError as error:
+                _show_api_error(error)
+    result = st.session_state.get("its_last_recommendation")
+    if result:
+        st.divider()
+        st.caption(f"Request ID: {result.get('request_id', '—')}")
+        if result.get("status") == "insufficient_resolution_evidence":
+            st.warning(result.get("message", "Insufficient verified resolution evidence."))
+        else:
+            st.success(result.get("message", "Approved knowledge candidates found. Analyst validation remains required."))
+        recommendation = result.get("recommendation")
+        if recommendation:
+            st.markdown("**Suggested steps from approved knowledge**")
+            for index, step in enumerate(recommendation.get("steps", []), start=1):
+                st.write(f"{index}. {step}")
+            st.caption(
+                f"Source: {recommendation.get('source_name', '—')} · "
+                f"Article: {recommendation.get('source_article_id', '—')} · "
+                f"Reference: {recommendation.get('source_reference', '—')}"
+            )
+        matches = result.get("approved_knowledge_matches", [])
+        if matches:
+            with st.expander("Approved knowledge evidence details"):
+                st.json(matches)
+        similar = result.get("similar_historical_tickets", [])
+        st.markdown("**Similar historical ticket descriptions**")
+        _render_result_table(similar, ["rank", "ticket_id", "category", "bm25_rank", "semantic_rank", "rrf_score"])
+        if result.get("human_review_required"):
+            st.warning("Analyst validation is required. IT-Sentinel does not execute remediation or close tickets.")
+
+
+def _render_feedback_audit(client: ITSentinelClient) -> None:
+    st.subheader("Analyst feedback & audit trail")
+    feedback_tab, audit_tab = st.tabs(["Submit feedback", "View audit history"])
+    recent = st.session_state.get("its_requests", {})
+    last_id = ""
+    for preferred in ["recommendation", "analysis", "search", "compare"]:
+        if preferred in recent:
+            last_id = recent[preferred]["request_id"]
+            break
+    with feedback_tab:
+        st.write("Record whether the system output helped the analyst. Feedback is attached to an existing API request.")
+        with st.form("feedback_form"):
+            request_id = st.text_input("Request ID", value=last_id)
+            ticket_id = st.text_input("Ticket ID (optional)", value=(recent.get("recommendation", {}) or {}).get("ticket_id", ""))
+            decision = st.selectbox("Analyst decision", ["useful", "incorrect", "unresolved"])
+            notes = st.text_area("Notes (optional)", height=90, max_chars=5000)
+            submitted = st.form_submit_button("Save analyst feedback", type="primary", use_container_width=True)
+        if submitted:
+            if not request_id.strip():
+                st.warning("Enter a request ID from a previous analysis, search or recommendation.")
+            else:
+                payload = {"request_id": request_id.strip(), "feedback": decision, "notes": notes.strip() or None, "ticket_id": ticket_id.strip() or None}
+                try:
+                    with st.spinner("Saving feedback..."):
+                        saved = client.submit_feedback(payload)
+                    st.session_state["its_last_feedback"] = saved
+                    st.success("Analyst feedback saved.")
+                    st.json(saved)
+                except APIError as error:
+                    _show_api_error(error)
+    with audit_tab:
+        st.write("Inspect the request-level record or every API event associated with a ticket ID.")
+        audit_mode = st.radio("Lookup type", ["By ticket ID", "By request ID"], horizontal=True)
+        with st.form("audit_lookup_form"):
+            lookup_value = st.text_input("Ticket ID" if audit_mode == "By ticket ID" else "Request ID", value=(recent.get("recommendation", {}) or {}).get("ticket_id", "") if audit_mode == "By ticket ID" else last_id)
+            submitted = st.form_submit_button("Retrieve audit record", use_container_width=True)
+        if submitted:
+            if not lookup_value.strip():
+                st.warning("Enter an ID to search.")
+            else:
+                try:
+                    with st.spinner("Loading audit records..."):
+                        result = client.audit_ticket(lookup_value.strip()) if audit_mode == "By ticket ID" else client.audit_request(lookup_value.strip())
+                    st.session_state["its_last_audit"] = result
+                except APIError as error:
+                    _show_api_error(error)
+        audit_result = st.session_state.get("its_last_audit")
+        if audit_result:
+            if audit_mode == "By ticket ID":
+                st.metric("Audit records", audit_result.get("record_count", 0))
+                for record in audit_result.get("records", []):
+                    with st.expander(f"{record.get('endpoint')} · {record.get('created_at')} · {record.get('request_id')}"):
+                        st.write("Analyst decision:", record.get("analyst_decision") or "Not reviewed")
+                        if record.get("analyst_notes"):
+                            st.write("Notes:", record["analyst_notes"])
+                        st.write("Input:", record.get("input_text", ""))
+                        st.json(record.get("output", {}))
+            else:
+                st.json(audit_result)
+
+
+def main() -> None:
+    st.sidebar.markdown('<p class="its-brand">🛡️ IT-Sentinel</p><p class="its-sub">Intelligent IT ticket analysis</p>', unsafe_allow_html=True)
+    st.sidebar.divider()
+    if DEPLOYMENT_MODE in {"local", "embedded", "streamlit"}:
+        client = ITSentinelClient("local")
+        st.sidebar.success("Embedded runtime · Models ready")
+        st.sidebar.caption("Free-hosted profile uses BM25 + TF-IDF + RRF. It does not load PyTorch or the Sentence Transformer model.")
+        st.sidebar.caption("Feedback and audit use temporary local storage on Streamlit Community Cloud.")
+    else:
+        api_url = st.sidebar.text_input(
+            "FastAPI base URL",
+            value=st.session_state.get("its_api_url", DEFAULT_API_URL),
+            help="Local default is port 8001. In Docker Compose the dashboard uses http://api:8000.",
+        )
+        st.session_state["its_api_url"] = api_url.strip().rstrip("/")
+        client = ITSentinelClient(st.session_state["its_api_url"] or DEFAULT_API_URL)
+
+    try:
+        health = client.health()
+        if health.get("models_loaded"):
+            st.sidebar.success("API online · Models ready")
+        else:
+            st.sidebar.warning("API reachable · Models starting")
+    except APIError as error:
+        st.sidebar.error("API offline")
+        st.sidebar.caption(str(error))
+
+    if "its_page" not in st.session_state:
+        st.session_state["its_page"] = "Overview"
+    page = st.sidebar.radio("Workspace", NAV_ITEMS, key="its_page", label_visibility="collapsed")
+    st.sidebar.divider()
+    st.sidebar.caption("Analyst decision support only · No automatic remediation")
+    st.sidebar.caption("Prototype build · 0.1.0")
+
+    st.markdown('<div class="its-eyebrow">IT OPERATIONS · ANALYST WORKSPACE</div>', unsafe_allow_html=True)
+    st.title(page)
+    st.caption("Classify incidents, retrieve historical context, inspect approved knowledge and preserve analyst decisions.")
+
+    if page == "Incident Workbench":
+        render_incident_workbench(client)
+    elif page == "Overview":
+        try:
+            health = client.health()
+            api_ready = bool(health.get("models_loaded"))
+        except APIError:
+            api_ready = False
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Historical ticket descriptions", "1,570")
+        c2.metric("Classifier categories", "7")
+        c3.metric("Retrieval methods", "3")
+        c4.metric("API status", "Ready" if api_ready else "Unavailable")
+        st.divider()
+        left, right = st.columns([1.3, 1])
+        with left:
+            st.markdown("### Workflow")
+            workflow = [
+                ("01", "Analyze", "Predict a ticket category and estimate a demonstration priority."),
+                ("02", "Retrieve", "Find similar historical ticket descriptions with BM25, semantic search and hybrid RRF."),
+                ("03", "Recommend", "Search explicitly approved knowledge articles and show source evidence."),
+                ("04", "Review", "Capture analyst feedback and inspect an audit trail."),
+            ]
+            for number, title, description in workflow:
+                st.markdown(f"<div class='its-panel' style='margin-bottom:.65rem'><span class='its-eyebrow'>{number}</span><br><b>{title}</b><br><span class='its-muted'>{description}</span></div>", unsafe_allow_html=True)
+        with right:
+            st.markdown("### System components")
+            st.markdown("- FastAPI backend and Swagger documentation\n- Calibrated ticket classifier\n- BM25 lexical retrieval\n- Sentence Transformer semantic retrieval\n- Reciprocal Rank Fusion comparison\n- SQLite feedback and audit persistence\n- Streamlit analyst dashboard")
+            st.markdown("### Important operating notes")
+            st.info("The historical corpus currently supplies ticket descriptions, not verified agent resolutions. The approved knowledge base starts empty. Recommendations therefore fall back to human review unless approved articles have been added.")
+            st.warning("P1–P4 priority mapping is a demonstration rule, not an official HCLTech policy. Classifier confidence is an estimate, not a guarantee.")
+        st.markdown("### Start here")
+        quick1, quick2, quick3 = st.columns(3)
+        quick1.button("Analyze a ticket", use_container_width=True, on_click=_go_to_page, args=("Analyze ticket",))
+        quick2.button("Search similar tickets", use_container_width=True, on_click=_go_to_page, args=("Similar tickets",))
+        quick3.button("Compare retrieval", use_container_width=True, on_click=_go_to_page, args=("Compare retrieval",))
+    elif page == "Analyze ticket":
+        _render_analyze(client)
+    elif page == "Similar tickets":
+        _render_search(client)
+    elif page == "Compare retrieval":
+        _render_compare(client)
+    elif page == "Recommendations":
+        _render_recommendations(client)
+    elif page == "Feedback & audit":
+        _render_feedback_audit(client)
+
+
+if __name__ == "__main__":
+    main()

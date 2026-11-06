@@ -1,0 +1,77 @@
+"""Small HTTP client for the IT-Sentinel FastAPI backend."""
+
+from __future__ import annotations
+
+from typing import Any, Dict, Optional
+from urllib.parse import quote
+
+import requests
+
+
+class APIError(RuntimeError):
+    """Raised when the IT-Sentinel API returns an error or cannot be reached."""
+
+    def __init__(self, message: str, status_code: Optional[int] = None):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class ITSentinelClient:
+    def __init__(self, base_url: str, timeout: int = 90):
+        normalized_url = base_url.strip().rstrip("/")
+        if not normalized_url:
+            raise ValueError("API base URL cannot be empty.")
+        if "://" not in normalized_url:
+            normalized_url = f"http://{normalized_url}"
+        self.base_url = normalized_url
+        self.timeout = timeout
+        self.session = requests.Session()
+
+    def _request(self, method: str, path: str, **kwargs: Any) -> Dict[str, Any]:
+        url = f"{self.base_url}{path}"
+        try:
+            response = self.session.request(
+                method, url, timeout=kwargs.pop("timeout", self.timeout), **kwargs
+            )
+        except requests.RequestException as exc:
+            raise APIError(
+                f"Could not connect to IT-Sentinel API at {self.base_url}. "
+                "Check that Uvicorn is running and the API URL is correct. "
+                f"Details: {exc}"
+            ) from exc
+
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = {"detail": response.text[:2000]}
+
+        if not response.ok:
+            detail = payload.get("detail", payload) if isinstance(payload, dict) else payload
+            raise APIError(str(detail), status_code=response.status_code)
+        if not isinstance(payload, dict):
+            raise APIError("The API returned an unexpected response format.", response.status_code)
+        return payload
+
+    def health(self) -> Dict[str, Any]:
+        return self._request("GET", "/health", timeout=5)
+
+    def analyze_ticket(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return self._request("POST", "/api/v1/tickets/analyze", json=payload)
+
+    def search_tickets(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return self._request("POST", "/api/v1/tickets/search", json=payload)
+
+    def compare_retrieval(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return self._request("POST", "/api/v1/tickets/search/compare", json=payload)
+
+    def recommend(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return self._request("POST", "/api/v1/tickets/recommend", json=payload)
+
+    def submit_feedback(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return self._request("POST", "/api/v1/feedback", json=payload)
+
+    def audit_ticket(self, ticket_id: str) -> Dict[str, Any]:
+        return self._request("GET", f"/api/v1/audit/tickets/{quote(ticket_id, safe='')}")
+
+    def audit_request(self, request_id: str) -> Dict[str, Any]:
+        return self._request("GET", f"/api/v1/audit/requests/{quote(request_id, safe='')}")
