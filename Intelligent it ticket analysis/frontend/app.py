@@ -13,6 +13,16 @@ from typing import Any, Dict, List
 import pandas as pd
 import streamlit as st
 
+# Ensure imports and relative paths work on Streamlit Community Cloud.
+import os as _os
+import sys as _sys
+from pathlib import Path as _Path
+
+_PROJECT_ROOT = _Path(__file__).resolve().parents[1]
+if str(_PROJECT_ROOT) not in _sys.path:
+    _sys.path.insert(0, str(_PROJECT_ROOT))
+_os.chdir(_PROJECT_ROOT)
+
 from frontend.api_client import APIError, ITSentinelClient
 from frontend.workbench import render_incident_workbench
 
