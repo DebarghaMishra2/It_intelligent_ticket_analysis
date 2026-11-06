@@ -1,0 +1,658 @@
+actual_category,predicted_category
+Support general,Support general
+Fileservice,Fileservice
+Software,Support general
+EOL,EOL
+Fileservice,Fileservice
+EOL,EOL
+Software,Software
+Support general,Support general
+Support general,Support general
+Fileservice,Fileservice
+Computer-Services,Computer-Services
+Active Directory,Support general
+Support general,Support general
+Support general,Support general
+Support general,Support general
+Support general,Support general
+Support general,Support general
+Support general,Support general
+Active Directory,Active Directory
+Software,Software
+Support general,Support general
+Support general,Support general
+Support general,Computer-Services
+Fileservice,Fileservice
+Software,Software
+Fileservice,Fileservice
+O365,Fileservice
+Support general,Support general
+Support general,Support general
+Fileservice,Fileservice
+O365,O365
+Support general,Support general
+Support general,Support general
+O365,O365
+EOL,EOL
+Active Directory,Active Directory
+Support general,Support general
+Active Directory,Support general
+Support general,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+Fileservice,Fileservice
+O365,O365
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+Support general,Support general
+Software,Support general
+Computer-Services,Fileservice
+Active Directory,Support general
+Fileservice,Fileservice
+Support general,Support general
+EOL,EOL
+Active Directory,Fileservice
+Support general,Support general
+Active Directory,Active Directory
+EOL,EOL
+O365,O365
+Fileservice,Fileservice
+Support general,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+Support general,Support general
+Fileservice,Fileservice
+Software,Software
+Support general,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+Active Directory,Active Directory
+Software,O365
+Software,Software
+Computer-Services,Computer-Services
+O365,Support general
+Fileservice,Fileservice
+Active Directory,Support general
+Support general,Support general
+Support general,O365
+Support general,Software
+Fileservice,Fileservice
+Computer-Services,Computer-Services
+O365,O365
+Support general,Support general
+Computer-Services,Computer-Services
+Support general,Support general
+Support general,Support general
+Software,Active Directory
+Support general,Support general
+Active Directory,Active Directory
+Support general,Support general
+Support general,Support general
+O365,O365
+Support general,Support general
+Software,Software
+Fileservice,Fileservice
+O365,O365
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+Computer-Services,Computer-Services
+Active Directory,Active Directory
+Fileservice,Fileservice
+Support general,Support general
+Fileservice,Fileservice
+O365,O365
+EOL,EOL
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+Support general,Support general
+Software,Support general
+Active Directory,Active Directory
+Computer-Services,Computer-Services
+Fileservice,Fileservice
+Support general,Software
+O365,Support general
+Fileservice,Fileservice
+Active Directory,Support general
+Fileservice,Fileservice
+Active Directory,Active Directory
+Support general,Support general
+Support general,Active Directory
+Fileservice,Fileservice
+Support general,O365
+Software,Software
+Fileservice,Fileservice
+Fileservice,Fileservice
+Support general,Support general
+EOL,EOL
+Support general,Support general
+O365,Support general
+Support general,Support general
+Support general,Support general
+O365,O365
+O365,O365
+Support general,Active Directory
+Software,Software
+Fileservice,Fileservice
+Active Directory,Active Directory
+Support general,Support general
+Support general,Support general
+Support general,Support general
+Computer-Services,Computer-Services
+Support general,Support general
+Support general,Support general
+O365,O365
+Active Directory,O365
+Support general,Support general
+Support general,Support general
+O365,Support general
+Fileservice,Software
+Fileservice,Fileservice
+Fileservice,Fileservice
+Fileservice,Fileservice
+Software,Support general
+Software,Software
+O365,O365
+Computer-Services,Support general
+Fileservice,Fileservice
+Support general,Support general
+Software,Support general
+Support general,Support general
+Software,Software
+Software,O365
+Fileservice,Fileservice
+O365,O365
+O365,Support general
+O365,Support general
+O365,O365
+EOL,EOL
+O365,Support general
+Active Directory,Support general
+Support general,Support general
+O365,O365
+Fileservice,Fileservice
+O365,Support general
+Software,Support general
+Support general,Support general
+Fileservice,Fileservice
+O365,Support general
+Active Directory,Active Directory
+Support general,Support general
+Software,O365
+Fileservice,Fileservice
+Fileservice,Fileservice
+Computer-Services,O365
+EOL,EOL
+Computer-Services,Computer-Services
+Fileservice,Fileservice
+O365,O365
+Fileservice,Fileservice
+Fileservice,Fileservice
+Fileservice,Fileservice
+Support general,Support general
+Fileservice,O365
+Software,Software
+Fileservice,Fileservice
+Software,O365
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+EOL,EOL
+O365,O365
+Computer-Services,O365
+Fileservice,Fileservice
+EOL,EOL
+Support general,Support general
+Support general,Support general
+Support general,Support general
+EOL,EOL
+EOL,EOL
+O365,O365
+Fileservice,Fileservice
+Support general,Support general
+Active Directory,Support general
+EOL,EOL
+Support general,Support general
+Support general,Support general
+O365,O365
+O365,Fileservice
+Support general,Support general
+Software,Software
+O365,Support general
+O365,O365
+Fileservice,Fileservice
+Fileservice,Fileservice
+Fileservice,Fileservice
+Support general,Support general
+O365,O365
+Computer-Services,Active Directory
+Support general,Active Directory
+Support general,Support general
+O365,O365
+Support general,Support general
+Support general,Support general
+Software,Software
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+Active Directory,Active Directory
+Active Directory,Support general
+Computer-Services,Active Directory
+EOL,EOL
+Active Directory,Fileservice
+Fileservice,Fileservice
+Support general,Support general
+EOL,EOL
+Computer-Services,Computer-Services
+Fileservice,Fileservice
+Active Directory,Active Directory
+Support general,Support general
+Computer-Services,Support general
+Support general,Support general
+EOL,EOL
+Fileservice,Fileservice
+Support general,Support general
+O365,O365
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+Active Directory,Support general
+Active Directory,Active Directory
+O365,O365
+O365,O365
+Support general,O365
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+Support general,Active Directory
+Fileservice,Fileservice
+Support general,Support general
+Software,Active Directory
+EOL,EOL
+Support general,Support general
+Support general,Support general
+O365,O365
+Support general,Support general
+Support general,Support general
+EOL,EOL
+Support general,Support general
+Fileservice,Fileservice
+O365,Support general
+Fileservice,Fileservice
+Support general,Support general
+Computer-Services,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+O365,O365
+Fileservice,Fileservice
+O365,Support general
+Fileservice,Fileservice
+Support general,Support general
+EOL,EOL
+O365,O365
+Active Directory,Support general
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+O365,Support general
+Support general,Support general
+EOL,EOL
+Support general,Support general
+Support general,Support general
+Active Directory,Active Directory
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+Support general,Support general
+Active Directory,Active Directory
+Support general,Support general
+Support general,Support general
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+Software,Software
+O365,O365
+Fileservice,Fileservice
+Computer-Services,O365
+Support general,Support general
+Support general,Support general
+O365,O365
+Support general,Support general
+O365,Computer-Services
+Software,Support general
+Support general,Support general
+Active Directory,Support general
+EOL,EOL
+Software,Software
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+Active Directory,Fileservice
+EOL,EOL
+O365,O365
+Support general,Support general
+Fileservice,Fileservice
+Active Directory,Support general
+Fileservice,Fileservice
+Active Directory,Support general
+Active Directory,Support general
+Support general,Support general
+Active Directory,Active Directory
+Support general,Support general
+Software,Support general
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+EOL,EOL
+Computer-Services,Computer-Services
+EOL,EOL
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+EOL,EOL
+Support general,Support general
+Software,Software
+O365,O365
+Software,Software
+O365,Support general
+Computer-Services,Support general
+Fileservice,Support general
+Support general,Support general
+O365,Support general
+Support general,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+Support general,Support general
+Active Directory,Active Directory
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+Software,Support general
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+O365,O365
+Support general,Support general
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+Active Directory,Support general
+Support general,Support general
+Support general,Active Directory
+Computer-Services,Software
+Fileservice,Support general
+Support general,Support general
+O365,O365
+Support general,Active Directory
+Fileservice,Fileservice
+Active Directory,Support general
+Support general,Support general
+Fileservice,Fileservice
+EOL,EOL
+Fileservice,Active Directory
+EOL,EOL
+EOL,EOL
+Support general,Support general
+Support general,Software
+Software,Software
+Active Directory,Active Directory
+Computer-Services,Computer-Services
+EOL,EOL
+O365,O365
+Computer-Services,Computer-Services
+Software,Software
+EOL,EOL
+O365,O365
+O365,Software
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+Support general,Support general
+Support general,Support general
+EOL,EOL
+Support general,Support general
+Computer-Services,Computer-Services
+Software,Software
+Fileservice,Fileservice
+O365,O365
+Support general,Support general
+EOL,EOL
+Support general,Support general
+Support general,Support general
+O365,Support general
+Support general,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+Support general,Support general
+Computer-Services,Computer-Services
+O365,O365
+O365,O365
+EOL,EOL
+Support general,Support general
+Fileservice,Fileservice
+EOL,EOL
+Support general,Support general
+Support general,Support general
+Computer-Services,Computer-Services
+O365,Software
+Support general,O365
+Fileservice,Fileservice
+Computer-Services,Software
+Support general,Support general
+O365,O365
+Active Directory,Support general
+Fileservice,Fileservice
+Support general,Support general
+Active Directory,Active Directory
+Fileservice,Fileservice
+Computer-Services,Computer-Services
+Support general,Support general
+Support general,Support general
+O365,Support general
+Active Directory,Support general
+Fileservice,Fileservice
+O365,Support general
+O365,Support general
+Support general,Support general
+Support general,Support general
+O365,O365
+Software,Active Directory
+EOL,EOL
+Support general,Support general
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+EOL,EOL
+Software,Software
+EOL,EOL
+Support general,Support general
+Software,Software
+Support general,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+O365,O365
+EOL,EOL
+Software,Software
+O365,O365
+Software,Active Directory
+Fileservice,Fileservice
+O365,O365
+O365,Support general
+Support general,Support general
+Support general,Support general
+Fileservice,Fileservice
+Software,Support general
+Computer-Services,Computer-Services
+Fileservice,Fileservice
+Support general,Support general
+O365,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+EOL,EOL
+O365,O365
+Fileservice,Fileservice
+Software,Support general
+Support general,Software
+Support general,Support general
+Support general,Support general
+O365,Support general
+Support general,O365
+Computer-Services,Computer-Services
+O365,O365
+O365,O365
+EOL,EOL
+Support general,Support general
+Support general,Support general
+Support general,Support general
+O365,O365
+Computer-Services,Support general
+Support general,Support general
+Fileservice,Fileservice
+Active Directory,Support general
+Fileservice,Fileservice
+Support general,Support general
+Fileservice,Fileservice
+Fileservice,Computer-Services
+Software,Support general
+Support general,Support general
+Computer-Services,Computer-Services
+Fileservice,Fileservice
+Support general,Support general
+Software,Support general
+EOL,EOL
+Support general,Fileservice
+Software,O365
+Support general,Support general
+Fileservice,Software
+Support general,Support general
+EOL,EOL
+O365,O365
+Software,Support general
+Active Directory,Active Directory
+Support general,Software
+Fileservice,Fileservice
+Support general,Support general
+Computer-Services,Computer-Services
+Support general,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+Fileservice,O365
+Fileservice,Fileservice
+Fileservice,Fileservice
+Computer-Services,O365
+Support general,Support general
+EOL,EOL
+Computer-Services,Computer-Services
+EOL,EOL
+EOL,EOL
+O365,O365
+Fileservice,Fileservice
+O365,O365
+EOL,EOL
+Fileservice,Fileservice
+Support general,Support general
+EOL,EOL
+O365,Support general
+O365,O365
+Software,Software
+Computer-Services,Computer-Services
+Software,Computer-Services
+Support general,Support general
+Support general,Support general
+EOL,EOL
+EOL,EOL
+O365,O365
+Support general,Support general
+Support general,Support general
+O365,O365
+EOL,EOL
+Support general,Support general
+Computer-Services,Computer-Services
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+O365,O365
+Fileservice,Fileservice
+Fileservice,Fileservice
+Software,O365
+Support general,Support general
+Fileservice,Fileservice
+EOL,EOL
+Computer-Services,Support general
+Fileservice,Fileservice
+Support general,Support general
+Fileservice,Fileservice
+Fileservice,Fileservice
+EOL,EOL
+Support general,Support general
+Fileservice,Fileservice
+Support general,Support general
+Support general,Support general
+Fileservice,Fileservice
+Support general,Computer-Services
+EOL,EOL
+Fileservice,Fileservice
+Support general,Support general
+Fileservice,Fileservice
+Active Directory,Support general
+Computer-Services,Computer-Services
+Software,Software
+Software,O365
+Software,Software
+Fileservice,Fileservice
+Fileservice,Fileservice
+EOL,EOL
+Support general,Support general
+O365,Support general
+Computer-Services,Computer-Services
+Active Directory,Support general
+Support general,Support general
+Support general,Support general
+Support general,Active Directory
+Support general,Support general
+Fileservice,Fileservice
+Software,Software
+O365,Support general
+Computer-Services,Computer-Services
+Support general,Support general
+O365,Fileservice
+Software,Support general
+Support general,Support general
+Support general,O365
+Support general,Software
+Software,Software
+EOL,EOL
+Support general,Support general
+O365,O365
+Active Directory,Support general
+O365,Support general
+Support general,Support general
+EOL,EOL
+Fileservice,Fileservice
+Software,Support general
+Fileservice,Fileservice
+Software,Software
+O365,O365
+Active Directory,Active Directory
+EOL,EOL
+Software,Software
+Support general,Support general
+O365,O365
+Fileservice,Fileservice
+O365,Support general
+Support general,Support general
+Support general,Support general
+Fileservice,Fileservice
+O365,O365
+Support general,Support general
+Active Directory,Active Directory
+Active Directory,Fileservice
+Fileservice,Fileservice

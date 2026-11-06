@@ -1,0 +1,4 @@
+method,precision_at_5,macro_recall_at_5,micro_pooled_recall_at_5,mrr_at_5_all_queries,mrr_at_5_positive_pool_queries,relevant_found,relevant_in_pool,queries_evaluated,queries_with_relevant_candidates
+BM25,0.5333333333333333,0.8111111111111111,0.7272727272727273,0.8333333333333334,1.0,16,22,6,5
+Semantic,0.5,0.7444444444444445,0.6818181818181818,0.8333333333333334,1.0,15,22,6,5
+Hybrid,0.5,0.7444444444444445,0.6818181818181818,0.8333333333333334,1.0,15,22,6,5

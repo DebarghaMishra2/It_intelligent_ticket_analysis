@@ -1,0 +1,40 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: it-sentinel-api:local
+    environment:
+      PORT: "8000"
+      IT_SENTINEL_DATABASE_PATH: /var/data/it_sentinel.db
+      IT_SENTINEL_CLASSIFICATION_REVIEW_THRESHOLD: "0.60"
+      TOKENIZERS_PARALLELISM: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - it_sentinel_audit:/var/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 20s
+      timeout: 8s
+      retries: 15
+      start_period: 240s
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    image: it-sentinel-dashboard:local
+    environment:
+      PORT: "8501"
+      IT_SENTINEL_API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  it_sentinel_audit:

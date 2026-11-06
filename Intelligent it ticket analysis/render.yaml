@@ -1,0 +1,41 @@
+services:
+  # The API loads the classifier, retrieval corpus and sentence-transformer.
+  # The 2 GB plan is intentional for model memory; the attached disk preserves
+  # SQLite audit and analyst-feedback records across deploys/restarts.
+  - type: web
+    name: it-sentinel-api
+    runtime: docker
+    plan: 1c-2g
+    region: singapore
+    dockerfilePath: ./Dockerfile.api
+    autoDeployTrigger: commit
+    healthCheckPath: /health
+    disk:
+      name: it-sentinel-audit-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: IT_SENTINEL_DATABASE_PATH
+        value: /var/data/it_sentinel.db
+      - key: IT_SENTINEL_CLASSIFICATION_REVIEW_THRESHOLD
+        value: "0.60"
+      - key: TOKENIZERS_PARALLELISM
+        value: "false"
+      - key: HF_HOME
+        value: /opt/huggingface
+
+  # The dashboard reaches the API over Render's private network. The API client
+  # normalizes host:port to http://host:port.
+  - type: web
+    name: it-sentinel-dashboard
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile.dashboard
+    autoDeployTrigger: commit
+    envVars:
+      - key: IT_SENTINEL_API_URL
+        fromService:
+          type: web
+          name: it-sentinel-api
+          property: hostport

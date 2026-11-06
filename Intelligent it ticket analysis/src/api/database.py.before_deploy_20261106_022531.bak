@@ -1,0 +1,174 @@
+"""SQLite persistence for IT-Sentinel audit records and analyst feedback."""
+
+import json
+import sqlite3
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+ROOT = Path(__file__).resolve().parents[2]
+DATABASE_PATH = ROOT / "data" / "it_sentinel.db"
+
+
+def _connect() -> sqlite3.Connection:
+    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(DATABASE_PATH, timeout=30)
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
+
+
+@contextmanager
+def _managed_connection():
+    connection = _connect()
+    try:
+        yield connection
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def initialize_database() -> None:
+    with _managed_connection() as connection:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS audit_log (
+                request_id TEXT PRIMARY KEY,
+                ticket_id TEXT,
+                endpoint TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                input_text TEXT NOT NULL,
+                output_json TEXT NOT NULL,
+                analyst_decision TEXT,
+                analyst_notes TEXT
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_audit_ticket_id
+            ON audit_log(ticket_id)
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS analyst_feedback (
+                feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_id TEXT NOT NULL,
+                ticket_id TEXT,
+                feedback TEXT NOT NULL,
+                notes TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(request_id) REFERENCES audit_log(request_id)
+            )
+            """
+        )
+
+
+def create_audit_record(
+    request_id: str,
+    ticket_id: Optional[str],
+    endpoint: str,
+    input_text: str,
+    output: Dict[str, Any],
+) -> None:
+    created_at = datetime.now(timezone.utc).isoformat()
+    with _managed_connection() as connection:
+        connection.execute(
+            """
+            INSERT INTO audit_log
+            (request_id, ticket_id, endpoint, created_at, input_text, output_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                request_id,
+                ticket_id,
+                endpoint,
+                created_at,
+                input_text,
+                json.dumps(output, ensure_ascii=False, default=str),
+            ),
+        )
+
+
+def add_feedback(
+    request_id: str,
+    ticket_id: Optional[str],
+    feedback: str,
+    notes: Optional[str],
+) -> Dict[str, Any]:
+    created_at = datetime.now(timezone.utc).isoformat()
+    with _managed_connection() as connection:
+        existing = connection.execute(
+            "SELECT request_id, ticket_id FROM audit_log WHERE request_id = ?",
+            (request_id,),
+        ).fetchone()
+        if existing is None:
+            raise LookupError(f"No audit record exists for request_id={request_id}")
+
+        resolved_ticket_id = ticket_id or existing["ticket_id"]
+        connection.execute(
+            """
+            INSERT INTO analyst_feedback
+            (request_id, ticket_id, feedback, notes, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (request_id, resolved_ticket_id, feedback, notes, created_at),
+        )
+        connection.execute(
+            """
+            UPDATE audit_log
+            SET analyst_decision = ?, analyst_notes = ?
+            WHERE request_id = ?
+            """,
+            (feedback, notes, request_id),
+        )
+
+    return {
+        "request_id": request_id,
+        "ticket_id": resolved_ticket_id,
+        "feedback": feedback,
+        "notes": notes,
+        "created_at": created_at,
+    }
+
+
+def _audit_row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
+    item = dict(row)
+    try:
+        item["output"] = json.loads(item.pop("output_json"))
+    except (TypeError, json.JSONDecodeError):
+        item["output"] = None
+    return item
+
+
+def get_audit_by_ticket_id(ticket_id: str) -> list[Dict[str, Any]]:
+    with _managed_connection() as connection:
+        rows = connection.execute(
+            "SELECT * FROM audit_log WHERE ticket_id = ? ORDER BY created_at DESC",
+            (ticket_id,),
+        ).fetchall()
+    return [_audit_row_to_dict(row) for row in rows]
+
+
+def get_audit_by_request_id(request_id: str) -> Optional[Dict[str, Any]]:
+    with _managed_connection() as connection:
+        row = connection.execute(
+            "SELECT * FROM audit_log WHERE request_id = ?", (request_id,)
+        ).fetchone()
+        if row is None:
+            return None
+        audit = _audit_row_to_dict(row)
+        feedback_rows = connection.execute(
+            """
+            SELECT feedback_id, feedback, notes, created_at
+            FROM analyst_feedback WHERE request_id = ? ORDER BY created_at ASC
+            """,
+            (request_id,),
+        ).fetchall()
+    audit["feedback_history"] = [dict(item) for item in feedback_rows]
+    return audit

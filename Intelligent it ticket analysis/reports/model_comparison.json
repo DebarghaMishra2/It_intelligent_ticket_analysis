@@ -1,0 +1,20 @@
+{
+    "best_model": "Calibrated Linear SVM",
+    "validation_results": {
+        "Logistic Regression": {
+            "accuracy": 0.726984126984127,
+            "macro_f1": 0.691733933023401,
+            "weighted_f1": 0.7562286563941631
+        },
+        "Multinomial Naive Bayes": {
+            "accuracy": 0.7492063492063492,
+            "macro_f1": 0.6014423845029773,
+            "weighted_f1": 0.7208807936902684
+        },
+        "Calibrated Linear SVM": {
+            "accuracy": 0.8095238095238095,
+            "macro_f1": 0.7305012278629229,
+            "weighted_f1": 0.805921459202868
+        }
+    }
+}

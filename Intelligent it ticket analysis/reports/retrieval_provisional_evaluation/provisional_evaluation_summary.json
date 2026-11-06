@@ -1,0 +1,65 @@
+{
+  "evaluation_type": "AI-assisted provisional development diagnostic",
+  "not_ground_truth": true,
+  "input_file": "/Users/debarghamishra/Intelligent it ticket analysis/reports/novel_retrieval_review_candidates_provisional_filled.csv",
+  "candidate_rows": 191,
+  "queries_evaluated": 18,
+  "unique_candidate_tickets": 168,
+  "label_status_counts": {
+    "AI_PROVISIONAL": 152,
+    "NEEDS_HUMAN_REVIEW": 39
+  },
+  "label_counts": {
+    "provisional_relevant_1": 93,
+    "provisional_irrelevant_0": 59,
+    "unreviewed_blank": 39
+  },
+  "metric_definitions": {
+    "top_5_label_coverage": "Fraction of each method's top five candidates with a provisional 0/1 label.",
+    "conditional_precision_at_5_on_reviewed": "Relevant labelled candidates divided by labelled candidates in top five; excludes unreviewed candidates and must be read with coverage.",
+    "precision_at_5_lower_bound": "Confirmed relevant candidates divided by five; treats unreviewed top-five candidates as not yet confirmed relevant.",
+    "precision_at_5_upper_bound": "Confirmed relevant plus unreviewed top-five candidates divided by five; assumes all unreviewed top-five candidates are relevant.",
+    "known_label_pooled_recall_at_5": "Confirmed relevant top-five results divided by confirmed relevant candidates in the reviewed portion of the pooled candidate set. Not full-corpus recall.",
+    "confirmed_mrr_at_5_lower_bound": "Reciprocal rank of first confirmed relevant candidate in top five, or zero if none is confirmed; unreviewed candidates may hide an earlier relevant result."
+  },
+  "caution": "All labels currently originate from AI suggestions; 39 rows marked NEEDS_HUMAN_REVIEW remain unjudged. These metrics are preliminary diagnostics only, not human-verified benchmark results and not suitable as claims of final retrieval performance.",
+  "scope_note": "Recall is measured only against the AI-labelled subset of the judged union candidate pool, not the complete 1,570-ticket historical corpus.",
+  "overall_results": [
+    {
+      "method": "BM25",
+      "queries_evaluated": 18,
+      "queries_with_known_relevant_pool": 16,
+      "mean_unreviewed_candidates_in_pool": 2.1666666666666665,
+      "top_5_label_coverage": 0.8555555555555556,
+      "conditional_precision_at_5_on_reviewed": 0.5481481481481482,
+      "precision_at_5_lower_bound": 0.4555555555555555,
+      "precision_at_5_upper_bound": 0.6000000000000001,
+      "known_label_pooled_recall_at_5": 0.4330357142857143,
+      "confirmed_mrr_at_5_lower_bound": 0.7055555555555555
+    },
+    {
+      "method": "Hybrid",
+      "queries_evaluated": 18,
+      "queries_with_known_relevant_pool": 16,
+      "mean_unreviewed_candidates_in_pool": 2.1666666666666665,
+      "top_5_label_coverage": 0.8222222222222223,
+      "conditional_precision_at_5_on_reviewed": 0.7481481481481481,
+      "precision_at_5_lower_bound": 0.6222222222222222,
+      "precision_at_5_upper_bound": 0.8,
+      "known_label_pooled_recall_at_5": 0.6098958333333333,
+      "confirmed_mrr_at_5_lower_bound": 0.8444444444444444
+    },
+    {
+      "method": "Semantic",
+      "queries_evaluated": 18,
+      "queries_with_known_relevant_pool": 16,
+      "mean_unreviewed_candidates_in_pool": 2.1666666666666665,
+      "top_5_label_coverage": 0.8,
+      "conditional_precision_at_5_on_reviewed": 0.8500000000000001,
+      "precision_at_5_lower_bound": 0.6666666666666666,
+      "precision_at_5_upper_bound": 0.8666666666666667,
+      "known_label_pooled_recall_at_5": 0.6866815476190476,
+      "confirmed_mrr_at_5_lower_bound": 0.75
+    }
+  ]
+}

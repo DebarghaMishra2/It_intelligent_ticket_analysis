@@ -1,0 +1,10 @@
+{
+    "model_name": "paraphrase-multilingual-MiniLM-L12-v2",
+    "embedding_dimensions": 384,
+    "normalize_embeddings": true,
+    "num_records": 1570,
+    "batch_size": 32,
+    "corpus_file": "classification_train.csv",
+    "embedding_file": "ticket_embeddings.npy",
+    "metadata_file": "ticket_embedding_metadata.csv"
+}
